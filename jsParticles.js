@@ -42,17 +42,11 @@ window.cancelRequestAnimFrame = (function() {
                                 )();
 
 
-// Create a background object
-var BG = {
-    Color: '#333',
-    Paint: function(){
-	ctx.fillStyle = this.Color;
-	ctx.fillRect(0, 0, Width, Height);
-    }
-};
+
 
 
 // Particle class
+// -----------------------------------------------------------------------------
 function Particle(){
     // The particles movement vector
     this.OwnVector = new Vector(10, (pi/2));
@@ -136,6 +130,17 @@ Particle.prototype =
 Particle.prototype.constructor = Particle;
 
 
+
+
+// Create a background object
+var BG = {
+    Color: '#333',
+    Paint: function(){
+	ctx.fillStyle = this.Color;
+	ctx.fillRect(0, 0, Width, Height);
+    }
+};
+
 // Main paint function
 function Paint(){
     ctx.beginPath();
@@ -148,16 +153,14 @@ function Paint(){
     }
 }
 
-
-
-function NewGame(){
+function NewGame()
+{
     ParticleArray = [new Particle()];
     Loop();
 }
 
-
-
-function Loop(){
+function Loop()
+{
     init = requestAnimFrame(Loop);
     Paint();
     
@@ -169,8 +172,6 @@ function Loop(){
     if (120 / Counter == 1)
     {
         ParticleArray.push(new Particle());
-        
-
         Counter = 0;
     }
     Counter++;
@@ -179,16 +180,15 @@ function Loop(){
     {
         ParticleArray = [new Particle()];
     }
- 
 };
+
 // Start the main loop
 NewGame();
 
-
-
 // Very simple vector implementation
 // :---------------------------------------------------------------------------:
-function Vector(Length, Angle){
+function Vector(Length, Angle)
+{
     this.Length = Length;
     this.Angle = Angle;
 };
@@ -211,7 +211,6 @@ function AddVectors (vector1, vector2)
 
     var newVec = new Vector(Length, Angle);
     return newVec;
-
 }
 
 
