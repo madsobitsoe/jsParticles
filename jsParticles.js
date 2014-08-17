@@ -16,10 +16,10 @@ canvas.setAttribute('tabindex', 1);
 var ctx = canvas.getContext("2d");
 var FPS = 1000 / 60;
 // Create gravity vector
-var gravity = { Angle:pi, Length:1.75 };
+var gravity = { angle:pi, length:1.75 };
 
 // Create counter for for creating new particles
-var Counter = 0;
+var counter = 0;
 // Create array to hold particles
 var ParticleArray = [];
 
@@ -52,48 +52,50 @@ window.cancelRequestAnimFrame = (function() {
 
 // Particle class
 // -----------------------------------------------------------------------------
-function Particle(X, Y, vector)
+function Particle(X, Y, vector, radius, mass)
 {
     this.X = X || Particle.prototype.X;
     this.Y = Y || Particle.prototype.Y;
     // The particles movement vector
     this.vector = vector || Particle.prototype.vector;
+    this.radius = radius || Particle.prototype.radius;
+    this.mass = mass || Particle.prototype.mass;
 
     this.CheckBounds = function()
     {
-        if (this.X > Width - this.Radius)
+        if (this.X > Width - this.radius)
         {
-            this.X = 2 * (Width - this.Radius) - this.X;
-            this.vector.Angle *= -1;
-            this.vector.Length *= this.Elasticity;
+            this.X = 2 * (Width - this.radius) - this.X;
+            this.vector.angle *= -1;
+            this.vector.length *= this.Elasticity;
         }
-        if (this.X < this.Radius)
+        if (this.X < this.radius)
         {
-            this.X = 2 * this.Radius - this.X;
-            this.vector.Angle *= -1;
-            this.vector.Length *= this.Elasticity;
-        }
-
-        if(this.Y > Height - this.Radius)
-        {
-            this.Y = 2 * (Height - this.Radius) - this.Y;
-            this.vector.Angle = - this.vector.Angle;
-            this.vector.Length = (this.vector.Length * this.Elasticity) * -1 ;
+            this.X = 2 * this.radius - this.X;
+            this.vector.angle *= -1;
+            this.vector.length *= this.Elasticity;
         }
 
-        if(this.Y  < this.Radius)
+        if(this.Y > Height - this.radius)
         {
-            this.Y = 2 * this.Radius - this.Y;
-            this.vector.Angle = - this.vector.Angle;
-            this.vector.Length = (this.vector.Length * this.Elasticity) * -1 ;
+            this.Y = 2 * (Height - this.radius) - this.Y;
+            this.vector.angle = - this.vector.angle;
+            this.vector.length = (this.vector.length * this.Elasticity) * -1 ;
+        }
+
+        if(this.Y  < this.radius)
+        {
+            this.Y = 2 * this.radius - this.Y;
+            this.vector.angle = - this.vector.angle;
+            this.vector.length = (this.vector.length * this.Elasticity) * -1 ;
         }
     };
 
     this.Move = function()
     {
         // Update position based on speed and angle 
-        this.X += Math.sin(this.vector.Angle) * this.vector.Length;
-        this.Y -= Math.cos(this.vector.Angle) * this.vector.Length;
+        this.X += Math.sin(this.vector.angle) * this.vector.length;
+        this.Y -= Math.cos(this.vector.angle) * this.vector.length;
     };
 
     this.Reset = function()
@@ -103,7 +105,7 @@ function Particle(X, Y, vector)
     };
     this.ExperienceDrag = function()
     {
-        this.vector.Length *= this.Drag;   
+        this.vector.length *= this.Drag;   
     };
 
     this.ExperienceGravity = function()
@@ -132,9 +134,9 @@ Particle.prototype =
     {
         X: 50,
         Y: 50,
-        Radius: 10,
-        vector: { Angle:(pi/4), Length: 10 },
-        Mass: 10,
+        radius: 10,
+        vector: { angle:(pi/4), length: 10 },
+        mass: 10,
         Drag: 0.997,
         Elasticity: 0.75,
         Color: '#911',
@@ -142,7 +144,7 @@ Particle.prototype =
         {
 	    ctx.beginPath();
 	    ctx.fillStyle = this.Color;
-	    ctx.arc(this.X, this.Y, this.Radius, 0, pi * 2, false);
+	    ctx.arc(this.X, this.Y, this.radius, 0, pi * 2, false);
 	    ctx.fill();
         }
     };
@@ -171,7 +173,7 @@ function Paint(){
 
 function NewGame()
 {
-    ParticleArray = [new Particle()];
+
     
     Loop();
 }
@@ -192,16 +194,17 @@ function Loop()
             }
         }       
     }
-    if (12 / Counter == 1)
+    if (6 / counter == 1)
     {
-        ParticleArray.push(new Particle());
-        Counter = 0;
+        ParticleArray.push(new Particle(Width/2, 100, ({ angle:(pi/4), length:10 }), (ParticleArray.length + 1) / 2, ParticleArray.length));
+        counter = 0;
     }
-        Counter++;
+        counter++;
 
-    if (ParticleArray.length > 100)
+    if (ParticleArray.length > 40)
     {
-        ParticleArray = [new Particle()];
+        ParticleArray = [];
+
     }
 };
 
@@ -221,41 +224,41 @@ function Collide(p1, p2)
 
     var dist = Math.sqrt((dx*dx) + (dy*dy));
 
-    if (dist <= p1.Radius + p2.Radius)
+    if (dist <= p1.radius + p2.radius)
     {
 
         var tangent = Math.atan2(dy, dx) + 0.5 * pi;
-        var total_mass = p1.Mass + p2.Mass;        
+        var total_mass = p1.mass + p2.mass;        
 
         p1.vector = AddVectors(
             { 
-                Angle:p1.vector.Angle, 
-                Length:(p1.vector.Length * 
-                        (p1.Mass-p2.Mass)/total_mass) 
+                angle:p1.vector.angle, 
+                length:(p1.vector.length * 
+                        (p1.mass-p2.mass)/total_mass) 
             }, 
             { 
-                Angle:tangent, 
-                Length:(2 * p2.vector.Length * p2.Mass/ total_mass) }
+                angle:tangent, 
+                length:(2 * p2.vector.length * p2.mass/ total_mass) }
         );
 
         p2.vector =  AddVectors(
             { 
-                Angle:p2.vector.Angle, 
-                Length:(p2.vector.Length * (p2.Mass-p1.Mass)/total_mass) 
+                angle:p2.vector.angle, 
+                length:(p2.vector.length * (p2.mass-p1.mass)/total_mass) 
             }, 
             { 
-                Angle:(tangent + pi), 
-                Length:(2 * p1.vector.Length * p1.Mass / total_mass) 
+                angle:(tangent + pi), 
+                length:(2 * p1.vector.length * p1.mass / total_mass) 
             }
             
         );
 
-        p1.vector.Length *= p1.Elasticity;
-        p2.vector.Length *= p2.Elasticity;
+        p1.vector.length *= p1.Elasticity;
+        p2.vector.length *= p2.Elasticity;
 
 
 
-        overlap = 0.5 * (p1.Radius + p2.Radius - dist + 1);
+        overlap = 0.5 * (p1.radius + p2.radius - dist + 1);
         p1.X += Math.sin(tangent) * overlap;
         p1.Y -= Math.cos(tangent) * overlap;
         p2.X -= Math.sin(tangent) * overlap;
@@ -267,15 +270,15 @@ function Collide(p1, p2)
 
 function AddVectors (vector1, vector2)
 {
-    var x = Math.sin(vector1.Angle) * vector1.Length + Math.sin(vector2.Angle) * vector2.Length;
-    var y = Math.cos(vector1.Angle) * vector1.Length + Math.cos(vector2.Angle) * vector2.Length;
+    var x = Math.sin(vector1.angle) * vector1.length + Math.sin(vector2.angle) * vector2.length;
+    var y = Math.cos(vector1.angle) * vector1.length + Math.cos(vector2.angle) * vector2.length;
 
     var angle = ((0.5 * pi) - Math.atan2(y, x));
     var length = Math.sqrt(x*x + y*y);
     
     
 
-    return { Angle: angle, Length: length };
+    return { angle: angle, length: length };
 }
 
 
