@@ -8,9 +8,44 @@
       canvas{ display: block; margin: 0px auto; border: 1px solid #000;}
     </style>
   </head>
+
+
   <body>
-    <canvas id="game"></canvas>
+
+<div id="container" style="width:600px">
+
+<div id="header" style=style="background-color:#FFD700;height:200px;width:100px;float:left;" >
+<h1>Canvas-balls</h1>
+</div>
+
+
+<div id="buttons" style="background-color:#FFFFFF;height:200px;width:100px;float:left;">
+<b>Toggles:</b><br>
+<button type="button" onclick="toggleGravity()">Toggle Gravity</button>
+<p>
+<button type="button" onclick="toggleDrag()">Toggle Drag</button>
+<p>
+<button type="button" onclick="toggleCollisions()">Toggle Collisions</button>
+
+</div>
+
+
+<div id="content" style="background-color:#EEEEEE;height:400px;width:400px;float:left;">
+
+
+
+
+     <canvas id="game"></canvas>
     <script src="jsParticles.js"></script>
-    <a href="https://github.com/madsobitsoe/jsParticles">Source on Github here</a>
+</div>
+
+
+
+    <div id="footer" style="background-color:#FFFFFF;clear:both;text-align:center;">    
+<a href="https://github.com/madsobitsoe/jsParticles">Source on Github here</a></div> 
+
+
+
+
   </body>
 </html>

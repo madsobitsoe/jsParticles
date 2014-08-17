@@ -16,11 +16,16 @@ canvas.setAttribute('tabindex', 1);
 var ctx = canvas.getContext("2d");
 var FPS = 1000 / 60;
 // Create gravity vector
-var gravity = new Vector(1.2, pi);
+var gravity = { Angle:pi, Length:1.75 };
+
 // Create counter for for creating new particles
 var Counter = 0;
 // Create array to hold particles
 var ParticleArray = [];
+
+var dist = 999999, overlap = 0;
+//Create some booleans for html interaction
+var useGravity = true, useDrag = true, useCollisions = true;
 
 // Request animation frame from multiple browser engines
 window.requestAnimFrame = (function(){ 
@@ -47,41 +52,48 @@ window.cancelRequestAnimFrame = (function() {
 
 // Particle class
 // -----------------------------------------------------------------------------
-function Particle(){
+function Particle(X, Y, vector)
+{
+    this.X = X || Particle.prototype.X;
+    this.Y = Y || Particle.prototype.Y;
     // The particles movement vector
-    this.OwnVector = new Vector(10, (pi/2));
+    this.vector = vector || Particle.prototype.vector;
 
     this.CheckBounds = function()
     {
-        if(this.Y - this.Radius < 0)
+        if (this.X > Width - this.Radius)
         {
-            this.Y = this.Radius;
-            this.OwnVector.Angle *= -1;
-            this.OwnVector.Length = (this.OwnVector.Length * this.Elasticity) * -1 ;
+            this.X = 2 * (Width - this.Radius) - this.X;
+            this.vector.Angle *= -1;
+            this.vector.Length *= this.Elasticity;
+        }
+        if (this.X < this.Radius)
+        {
+            this.X = 2 * this.Radius - this.X;
+            this.vector.Angle *= -1;
+            this.vector.Length *= this.Elasticity;
         }
 
-        if(this.Y + this.Radius > Height)
+        if(this.Y > Height - this.Radius)
         {
-            this.Y = Height - this.Radius;
-            this.OwnVector.Angle *= -1;
-            this.OwnVector.Length = (this.OwnVector.Length * this.Elasticity) * -1 ;
+            this.Y = 2 * (Height - this.Radius) - this.Y;
+            this.vector.Angle = - this.vector.Angle;
+            this.vector.Length = (this.vector.Length * this.Elasticity) * -1 ;
         }
 
-        if(this.X - this.Radius <= 0 ||
-           this.X + this.Radius > Width)
+        if(this.Y  < this.Radius)
         {
-            this.OwnVector.Angle *= -1;
-            this.OwnVector.Length *= this.Elasticity;
-
+            this.Y = 2 * this.Radius - this.Y;
+            this.vector.Angle = - this.vector.Angle;
+            this.vector.Length = (this.vector.Length * this.Elasticity) * -1 ;
         }
-
     };
 
     this.Move = function()
     {
-        // Update position based on speed, Angle 
-        this.X += Math.sin(this.OwnVector.Angle) * this.OwnVector.Length;
-        this.Y -= Math.cos(this.OwnVector.Angle) * this.OwnVector.Length;
+        // Update position based on speed and angle 
+        this.X += Math.sin(this.vector.Angle) * this.vector.Length;
+        this.Y -= Math.cos(this.vector.Angle) * this.vector.Length;
     };
 
     this.Reset = function()
@@ -91,20 +103,28 @@ function Particle(){
     };
     this.ExperienceDrag = function()
     {
-     this.OwnVector.Length *= this.Drag;   
+        this.vector.Length *= this.Drag;   
     };
 
     this.ExperienceGravity = function()
     {
-        this.OwnVector = AddVectors(this.OwnVector, gravity);
+        this.vector = AddVectors(this.vector, gravity);
     };
 
     this.Update = function()
     {
         this.CheckBounds();
-        this.ExperienceGravity();
-        this.ExperienceDrag();
         this.Move();
+        
+        if (useGravity)
+        {
+            this.ExperienceGravity();
+        } 
+        
+        if (useDrag)
+        {
+            this.ExperienceDrag();
+        } 
     };
 }
 
@@ -112,12 +132,11 @@ Particle.prototype =
     {
         X: 50,
         Y: 50,
-        Radius: 5,
-        Thickness: 0,
-        OwnVector: new Vector(1, 0),
-        Mass: 1,
+        Radius: 10,
+        vector: { Angle:(pi/4), Length: 10 },
+        Mass: 10,
         Drag: 0.997,
-        Elasticity: 1,
+        Elasticity: 0.75,
         Color: '#911',
         Paint: function()
         {
@@ -128,9 +147,6 @@ Particle.prototype =
         }
     };
 Particle.prototype.constructor = Particle;
-
-
-
 
 // Create a background object
 var BG = {
@@ -156,6 +172,7 @@ function Paint(){
 function NewGame()
 {
     ParticleArray = [new Particle()];
+    
     Loop();
 }
 
@@ -167,16 +184,22 @@ function Loop()
     for (i = 0; i < ParticleArray.length; i++)
     {
         ParticleArray[i].Update();
+        if (useCollisions)
+        {
+            for (j = i + 1; j < ParticleArray.length; j++)
+            {
+                Collide(ParticleArray[i], ParticleArray[j]);
+            }
+        }       
     }
-        
-    if (120 / Counter == 1)
+    if (12 / Counter == 1)
     {
         ParticleArray.push(new Particle());
         Counter = 0;
     }
-    Counter++;
+        Counter++;
 
-    if (ParticleArray.length > 10)
+    if (ParticleArray.length > 100)
     {
         ParticleArray = [new Particle()];
     }
@@ -185,32 +208,90 @@ function Loop()
 // Start the main loop
 NewGame();
 
-// Very simple vector implementation
-// :---------------------------------------------------------------------------:
-function Vector(Length, Angle)
+
+
+
+// Collision function for round particles
+function Collide(p1, p2)
 {
-    this.Length = Length;
-    this.Angle = Angle;
-};
-Vector.prototype = 
+
+    // Calculate delta x, delta y and then the hypothenuse between for actual distance
+    var dx = Math.abs(p1.X - p2.X);
+    var dy = Math.abs(p1.Y - p2.Y);
+
+    var dist = Math.sqrt((dx*dx) + (dy*dy));
+
+    if (dist <= p1.Radius + p2.Radius)
     {
-        Length: 1,
-        Angle: 1
-    };
-Vector.prototype.constructor = Vector;
+
+        var tangent = Math.atan2(dy, dx) + 0.5 * pi;
+        var total_mass = p1.Mass + p2.Mass;        
+
+        p1.vector = AddVectors(
+            { 
+                Angle:p1.vector.Angle, 
+                Length:(p1.vector.Length * 
+                        (p1.Mass-p2.Mass)/total_mass) 
+            }, 
+            { 
+                Angle:tangent, 
+                Length:(2 * p2.vector.Length * p2.Mass/ total_mass) }
+        );
+
+        p2.vector =  AddVectors(
+            { 
+                Angle:p2.vector.Angle, 
+                Length:(p2.vector.Length * (p2.Mass-p1.Mass)/total_mass) 
+            }, 
+            { 
+                Angle:(tangent + pi), 
+                Length:(2 * p1.vector.Length * p1.Mass / total_mass) 
+            }
+            
+        );
+
+        p1.vector.Length *= p1.Elasticity;
+        p2.vector.Length *= p2.Elasticity;
 
 
-// Takes two vectors as input, returns the resulting vector from adding them
+
+        overlap = 0.5 * (p1.Radius + p2.Radius - dist + 1);
+        p1.X += Math.sin(tangent) * overlap;
+        p1.Y -= Math.cos(tangent) * overlap;
+        p2.X -= Math.sin(tangent) * overlap;
+        p2.Y += Math.cos(tangent) * overlap;
+    }
+}
+
+
+
 function AddVectors (vector1, vector2)
 {
     var x = Math.sin(vector1.Angle) * vector1.Length + Math.sin(vector2.Angle) * vector2.Length;
     var y = Math.cos(vector1.Angle) * vector1.Length + Math.cos(vector2.Angle) * vector2.Length;
 
-    var Angle = ((0.5 * pi) - Math.atan2(y, x));
-    var Length = Math.sqrt(x*x + y*y);
+    var angle = ((0.5 * pi) - Math.atan2(y, x));
+    var length = Math.sqrt(x*x + y*y);
+    
+    
 
-    var newVec = new Vector(Length, Angle);
-    return newVec;
+    return { Angle: angle, Length: length };
 }
 
 
+
+
+// Functions to toggle settings from html buttons
+function toggleGravity()
+{
+    useGravity = !useGravity;
+}
+
+function toggleDrag()
+{
+    useDrag = ! useDrag;
+}
+function toggleCollisions()
+{
+    useCollisions = !useCollisions;
+}
