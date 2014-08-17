@@ -1,5 +1,5 @@
 #Very simple javascript physics engine#
-*Version 0.1*
+*Version 0.1.1*
 
 This is my way of learning javascript. Use it as you like, if you find a use for any of it.
 
