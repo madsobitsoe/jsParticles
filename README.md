@@ -1,5 +1,7 @@
-#Very simple javascript physics engine#
+# Very simple javascript physics engine#
 *Version 0.1.1*
+
+*check it out:* https://madsobitsoe.github.io/jsParticles/
 
 This is my way of learning javascript. Use it as you like, if you find a use for any of it.
 
